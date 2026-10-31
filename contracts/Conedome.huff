@@ -1,0 +1,1160 @@
+/// SPDX-License-Identifier: TINLILY
+/// LicenseRef-TINLILY: There Is No License I Love You.
+
+/// Storage offset to prevent collisions with other delegation contracts.
+/// keccak256("Conedome.1.0")
+#define constant STORAGE_OFFSET = 0xe60d27b7f8f053028d8c0ad54161daa8c5c129ee9c990230f8b2566e6d766325
+/// Pointer to the program counter in the heap.
+#define constant PROGRAM_COUNTER = 0x00
+/// Amount of bits to shift to isolate an opcode from the calldata slot.
+#define constant SINGLE_OPCODE = 0xf8
+/// Size of the opcode table in bytes.
+#define constant TABLE_SIZE = 0x06
+/// Glamsterdam table size in bytes.
+#define constant GLAMSTERDAM_TABLE_SIZE = 0x02
+/// Hex representation of 1 byte.
+#define constant ONE_BYTE = 0x01
+/// Hex representation of one word (32 bytes).
+#define constant ONE_WORD = 0x20
+
+/// Executes arbitrary opcode suquence from the calldata.
+/// Contains a table for each opcode at predictable offset.
+/// Jumps to the opcode table to execute it.
+/// NOTE: some opcodes have nested table jumps to stay at predictable offset.
+#define macro MAIN() = takes (0) returns (0) {
+
+    [PROGRAM_COUNTER] msize mstore // initialize program counter
+
+    loop:
+        [PROGRAM_COUNTER] mload // load program counter
+        calldataload [SINGLE_OPCODE] shr // load next opcode
+        [TABLE_SIZE] mul // multiply by table size to get offset
+        x00 add // add to table fisrt opcode offset
+        jump // jump to opcode implementation
+
+    move:
+        [PROGRAM_COUNTER] mload // load program counter
+        [ONE_BYTE] add // increment the program counter
+        [PROGRAM_COUNTER] mstore // store the updated program counter
+        loop jump // loop to the next opcode
+
+        //////////////////////////////////////////////////////
+       ///                                                ///
+      ///             OPCODE IMPLEMENTATIONS             ///
+     ///                                                ///
+    //////////////////////////////////////////////////////
+
+    impl_call:
+        // increase offsets by one memory slot to respect reserved PC memory slot
+        swap4 [ONE_WORD] add swap4 
+        swap6 [ONE_WORD] add swap6
+        call
+        move jump
+
+    impl_delegatecall:
+        // increase offsets by one memory slot to respect reserved PC memory slot
+        swap3 [ONE_WORD] add swap3 
+        swap5 [ONE_WORD] add swap5
+        delegatecall
+        move jump
+
+    impl_callcode:
+        // increase offsets by one memory slot to respect reserved PC memory slot
+        swap4 [ONE_WORD] add swap4 
+        swap6 [ONE_WORD] add swap6
+        callcode
+        move jump
+
+    impl_staticcall:
+        // increase offsets by one memory slot to respect reserved PC memory slot
+        swap3 [ONE_WORD] add swap3 
+        swap5 [ONE_WORD] add swap5
+        staticcall
+        move jump
+
+    impl_log0:
+        [ONE_WORD] add // increase offset by one memory slot to respect reserved PC memory slot
+        log0
+        move jump
+
+    impl_log1:
+        [ONE_WORD] add // increase offset by one memory slot to respect reserved PC memory slot
+        log1
+        move jump
+
+    impl_log2:
+        [ONE_WORD] add // increase offset by one memory slot to respect reserved PC memory slot
+        log2
+        move jump
+
+    impl_log3:
+        [ONE_WORD] add // increase offset by one memory slot to respect reserved PC memory slot
+        log3
+        move jump
+
+    impl_log4:
+        [ONE_WORD] add // increase offset by one memory slot to respect reserved PC memory slot
+        move jump
+
+    impl_create:
+        swap2 [ONE_WORD] add swap2 // increase offset by one memory slot to respect reserved PC memory slot
+        create
+        move jump
+
+    impl_create2:
+        swap2 [ONE_WORD] add swap2 // increase offset by one memory slot to respect reserved PC memory slot
+        create2
+        move jump
+
+    impl_codecopy:
+        // increase offset by one memory slot to respect reserved PC memory slot
+        [ONE_WORD] add
+        swap2 [ONE_WORD] add swap2
+        codecopy
+        move jump
+
+    impl_extcodecopy:
+        // increase offset by one memory slot to respect reserved PC memory slot
+        swap2 [ONE_WORD] add swap2
+        swap3 [ONE_WORD] add swap3
+        extcodecopy
+        move jump
+
+    impl_returndatacopy:
+        // increase offset by one memory slot to respect reserved PC memory slot
+        [ONE_WORD] add
+        swap2 [ONE_WORD] add swap2
+        returndatacopy
+        move jump
+
+    impl_mstore:
+        [ONE_WORD] add // increase offset by one memory slot to respect reserved PC memory slot
+        mstore
+        move jump
+
+    impl_mstore8:
+        [ONE_WORD] add // increase offset by one memory slot to respect reserved PC memory slot
+        mstore8
+        move jump
+
+    impl_mload:
+        [ONE_WORD] add // increase offset by one memory slot to respect reserved PC memory slot
+        mload
+        move jump
+
+    impl_mcopy:
+        // increase offset by one memory slot to respect reserved PC memory slot
+        [ONE_WORD] add
+        swap2 [ONE_WORD] add swap2
+        mcopy
+        move jump
+
+    impl_msize:
+        // Decrease size by one word to match actual memory usage
+        msize [ONE_WORD] sub
+        move jump
+
+    impl_return:
+        [ONE_WORD] add // increase offset by one memory slot to respect reserved PC memory slot
+        return
+
+    impl_revert:
+        [ONE_WORD] add // increase offset by one memory slot to respect reserved PC memory slot
+        revert
+
+    impl_keccak256:
+        [ONE_WORD] add // increase offset by one memory slot to respect reserved PC memory slot
+        keccak256
+    
+    impl_calldatacopy:
+        [ONE_WORD] add // increase offset by one memory slot to respect reserved PC memory slot
+        calldatacopy
+
+    impl_sstore:
+        [STORAGE_OFFSET] add // add storage offset to current pointer on the stack
+        sstore
+        move jump
+
+    impl_sload:
+        [STORAGE_OFFSET] add // add storage offset to current pointer on the stack
+        sload
+        move jump
+
+    impl_push32:
+        [PROGRAM_COUNTER] mload // get the program counter
+        [ONE_BYTE] add // increment to the push value offset
+        dup1 // copy the offset to the value
+        calldataload // load value on the stack, now only one offset is on the stack
+        swap1 // swap the value and remaining offset
+        [ONE_WORD] add // add word length to the remaining offset
+        [PROGRAM_COUNTER] mstore // store the updated program counter
+        loop jump // jump to the loop table right away due to 33 byte counter increase
+
+    invalid_jump:
+        0x00 0x00 revert
+
+    // TODO: this is optimistic jump implementation, interpreter might hit a random matching byte.
+    // Need to implement jumpdest scan later.
+    impl_jump:
+        dup1 // copy jump dest
+        calldataload [SINGLE_OPCODE] shr // get the opcode at the jump dest
+        0x5b eq // compare the opcode to the jumpdest opcode
+        iszero // check if it is correct jumpdest
+        invalid_jump jumpi // revert if dest is not jumpdest
+        [PROGRAM_COUNTER] mstore // update pc with the jumpdest
+        loop jump // proceed from the jumpdest
+    
+    impl_jumpi:
+        impl_jump jumpi
+        move jump
+
+
+    impl_swapn:
+        [PROGRAM_COUNTER] [ONE_BYTE] add mload // load program counter
+        calldataload [SINGLE_OPCODE] shr // load next opcode
+        [GLAMSTERDAM_TABLE_SIZE] mul // multiply by glamsterdam table size to get offset
+        swapn_17 add // add to table fisrt opcode offset
+        jump
+    
+    impl_dupn:
+        [PROGRAM_COUNTER] [ONE_BYTE] add mload // load program counter
+        calldataload [SINGLE_OPCODE] shr // load next opcode
+        [GLAMSTERDAM_TABLE_SIZE] mul // multiply by glamsterdam table size to get offset
+        dupn_17 add // add to table fisrt opcode offset
+        jump
+
+    impl_exchange:
+
+        //////////////////////////////////////////////////////
+       ///                                                ///
+      ///                OPCODE JUMPTABLES               ///
+     ///                                                ///
+    //////////////////////////////////////////////////////
+    x00:
+        stop
+        invalid invalid invalid invalid
+
+    x01:
+        add move jump
+
+    x02:
+        mul move jump
+
+    x03:
+        sub move jump
+
+    x04:
+        div move jump
+
+    x05:
+        sdiv move jump
+
+    x06:
+        mod move jump
+
+    x07:
+        smod move jump
+
+    x08:
+        addmod move jump
+
+    x09:
+        mulmod move jump
+
+    x0a:
+        exp move jump
+
+    x0b:
+        signextend move jump
+
+    x0c:
+        invalid invalid invalid invalid invalid
+
+    x0d:
+        invalid invalid invalid invalid invalid
+
+    x0e:
+        invalid invalid invalid invalid invalid
+
+    x0f:
+        invalid invalid invalid invalid invalid
+
+    x10:
+        lt move jump
+
+    x11:
+        gt move jump
+
+    x12:
+        slt move jump
+
+    x13:
+        sgt move jump
+
+    x14:
+        eq move jump
+
+    x15:
+        iszero move jump
+
+    x16:
+        and move jump
+
+    x17:
+        or move jump
+
+    x18:
+        xor move jump
+
+    x19:
+        not move jump
+
+    x1a:
+        byte move jump
+
+    x1b:
+        shl move jump
+
+    x1c:
+        shr move jump
+
+    x1d:
+        sar move jump
+
+    x1e:
+        clz move jump
+
+    x1f:
+        invalid invalid invalid invalid invalid
+
+    x20:
+        impl_keccak256 jump
+        invalid
+
+    x21:
+        invalid invalid invalid invalid invalid
+
+    x22:
+        invalid invalid invalid invalid invalid
+
+    x23:
+        invalid invalid invalid invalid invalid
+
+    x24:
+        invalid invalid invalid invalid invalid
+
+    x25:
+        invalid invalid invalid invalid invalid
+
+    x26:
+        invalid invalid invalid invalid invalid
+
+    x27:
+        invalid invalid invalid invalid invalid
+
+    x28:
+        invalid invalid invalid invalid invalid
+
+    x29:
+        invalid invalid invalid invalid invalid
+
+    x2a:
+        invalid invalid invalid invalid invalid
+
+    x2b:
+        invalid invalid invalid invalid invalid
+
+    x2c:
+        invalid invalid invalid invalid invalid
+
+    x2d:
+        invalid invalid invalid invalid invalid
+
+    x2e:
+        invalid invalid invalid invalid invalid
+
+    x2f:
+        invalid invalid invalid invalid invalid
+
+    x30:
+        address move jump
+
+    x31:
+        balance move jump
+
+    x32:
+        origin move jump
+
+    x33:
+        caller move jump
+
+    x34:
+        callvalue move jump
+
+    x35:
+        calldataload move jump
+
+    x36:
+        calldatasize move jump
+
+    x37:
+        impl_calldatacopy jump
+
+    x38:
+        codesize move jump
+
+    x39:
+        impl_codecopy jump
+
+    x3a:
+        gasprice move jump
+
+    x3b:
+        extcodesize move jump
+
+    x3c:
+        impl_extcodecopy jump
+
+    x3d:
+        returndatasize move jump
+
+    x3e:
+        impl_returndatacopy jump
+
+    x3f:
+        extcodehash move jump
+
+    x40:
+        blockhash move jump
+
+    x41:
+        coinbase move jump
+
+    x42:
+        timestamp move jump
+
+    x43:
+        number move jump
+
+    x44:
+        difficulty move jump
+
+    x45:
+        gaslimit move jump
+
+    x46:
+        chainid move jump
+
+    x47:
+        selfbalance move jump
+
+    x48:
+        basefee move jump
+
+    x49:
+        blobhash move jump
+
+    x4a:
+        blobbasefee move jump
+
+    x4b:
+        invalid invalid invalid invalid invalid
+
+    x4c:
+        invalid invalid invalid invalid invalid
+
+    x4d:
+        invalid invalid invalid invalid invalid
+
+    x4e:
+        invalid invalid invalid invalid invalid
+
+    x4f:
+        invalid invalid invalid invalid invalid
+
+    x50:
+        pop move jump
+
+    x51:
+        impl_mload jump
+
+    x52:
+        impl_mstore jump
+        invalid
+
+    x53:
+        impl_mstore8 jump
+        invalid
+
+    x54:
+        impl_sload jump
+        invalid
+
+    x55:
+        impl_sstore jump
+        invalid
+    x56:
+        impl_jump jump
+        invalid
+
+    x57:
+        impl_jumpi jump
+        invalid
+
+    x58: // PC
+        [PROGRAM_COUNTER] mload
+        invalid
+
+    x59:
+        impl_msize jump
+        invalid
+
+    x5a:
+        gas move jump
+
+    x5b:
+        move jump
+        invalid
+
+    x5c:
+        tload move jump
+
+    x5d:
+        tstore move jump
+
+    x5e:
+        impl_mcopy jump
+        invalid
+
+    x5f:
+        push0 move jump
+
+    x60:
+        impl_push32 jump
+        invalid
+
+    x61:
+        impl_push32 jump
+        invalid
+
+    x62:
+        impl_push32 jump
+        invalid
+
+    x63:
+        impl_push32 jump
+        invalid
+
+    x64:
+        impl_push32 jump
+        invalid
+
+    x65:
+        impl_push32 jump
+        invalid
+
+    x66:
+        impl_push32 jump
+        invalid
+
+    x67:
+        impl_push32 jump
+        invalid
+
+    x68:
+        impl_push32 jump
+        invalid
+
+    x69:
+        impl_push32 jump
+        invalid
+
+    x6a:
+        impl_push32 jump
+        invalid
+
+    x6b:
+        impl_push32 jump
+        invalid
+
+    x6c:
+        impl_push32 jump
+        invalid
+
+    x6d:
+        impl_push32 jump
+        invalid
+
+    x6e:
+        impl_push32 jump
+        invalid
+
+    x6f:
+        impl_push32  jump
+        invalid
+
+    x70:
+        impl_push32 jump
+        invalid
+
+    x71:
+        impl_push32 jump
+        invalid
+
+    x72:
+        impl_push32 jump
+        invalid
+
+    x73:
+        impl_push32 jump
+        invalid
+
+    x74:
+        impl_push32 jump
+        invalid
+
+    x75:
+        impl_push32 jump
+        invalid
+
+    x76:
+        impl_push32 jump
+        invalid
+
+    x77:
+        impl_push32 jump
+        invalid
+
+    x78:
+        impl_push32 jump
+        invalid
+
+    x79:
+        impl_push32 jump
+        invalid
+
+    x7a:
+        impl_push32 jump
+        invalid
+
+    x7b:
+        impl_push32 jump
+        invalid
+
+    x7c:
+        impl_push32 jump
+        invalid
+
+    x7d:
+        impl_push32 jump
+        invalid
+
+    x7e:
+        impl_push32 jump
+        invalid
+
+    x7f:
+        impl_push32 jump
+        invalid
+
+    x80:
+        dup1 move jump
+
+    x81:
+        dup2 move jump
+
+    x82:
+        dup3 move jump
+
+    x83:
+        dup4 move jump
+
+    x84:
+        dup5 move jump
+
+    x85:
+        dup6 move jump
+
+    x86:
+        dup7 move jump
+
+    x87:
+        dup8 move jump
+
+    x88:
+        dup9 move jump
+
+    x89:
+        dup10 move jump
+
+    x8a:
+        dup11 move jump
+
+    x8b:
+        dup12 move jump
+
+    x8c:
+        dup13 move jump
+
+    x8d:
+        dup14 move jump
+
+    x8e:
+        dup15 move jump
+
+    x8f:
+        dup16 move jump
+
+    x90:
+        swap1 move jump
+
+    x91:
+        swap2 move jump
+
+    x92:
+        swap3 move jump
+
+    x93:
+        swap4 move jump
+
+    x94:
+        swap5 move jump
+
+    x95:
+        swap6 move jump
+
+    x96:
+        swap7 move jump
+
+    x97:
+        swap8 move jump
+
+    x98:
+        swap9 move jump
+
+    x99:
+        swap10 move jump
+
+    x9a:
+        swap11 move jump
+
+    x9b:
+        swap12 move jump
+
+    x9c:
+        swap13 move jump
+
+    x9d:
+        swap14 move jump
+
+    x9e:
+        swap15 move jump
+
+    x9f:
+        swap16 move jump
+
+    xa0:
+        impl_log0 jump
+        invalid
+
+    xa1:
+        impl_log1 jump
+        invalid
+
+    xa2:
+        impl_log2 jump
+        invalid
+
+    xa3:
+        impl_log3 jump
+        invalid
+
+    xa4:
+        impl_log4 jump
+        invalid
+
+    xa5:
+        invalid invalid invalid invalid invalid
+
+    xa6:
+        invalid invalid invalid invalid invalid
+
+    xa7:
+        invalid invalid invalid invalid invalid
+
+    xa8:
+        invalid invalid invalid invalid invalid
+
+    xa9:
+        invalid invalid invalid invalid invalid
+
+    xaa:
+        invalid invalid invalid invalid invalid
+
+    xab:
+        invalid invalid invalid invalid invalid
+
+    xac:
+        invalid invalid invalid invalid invalid
+
+    xad:
+        invalid invalid invalid invalid invalid
+
+    xae:
+        invalid invalid invalid invalid invalid
+
+    xaf:
+        invalid invalid invalid invalid invalid
+
+    xb0:
+          invalid invalid invalid invalid invalid
+
+    xb1:
+        invalid invalid invalid invalid invalid
+
+    xb2:
+        invalid invalid invalid invalid invalid
+
+    xb3:
+        invalid invalid invalid invalid invalid
+
+    xb4:
+        invalid invalid invalid invalid invalid
+
+    xb5:
+        invalid invalid invalid invalid invalid
+
+    xb6:
+        invalid invalid invalid invalid invalid
+
+    xb7:
+        invalid invalid invalid invalid invalid
+
+    xb8:
+        invalid invalid invalid invalid invalid
+
+    xb9:
+        invalid invalid invalid invalid invalid
+
+    xba:
+        invalid invalid invalid invalid invalid
+
+    xbb:
+        invalid invalid invalid invalid invalid
+
+    xbc:
+        invalid invalid invalid invalid invalid
+
+    xbd:
+        invalid invalid invalid invalid invalid
+
+    xbe:
+        invalid invalid invalid invalid invalid
+
+    xbf:
+        invalid invalid invalid invalid invalid
+
+    xc0:
+        invalid invalid invalid invalid invalid
+
+    xc1:
+        invalid invalid invalid invalid invalid
+
+    xc2:
+        invalid invalid invalid invalid invalid
+
+    xc3:
+        invalid invalid invalid invalid invalid
+
+    xc4:
+        invalid invalid invalid invalid invalid
+
+    xc5:
+        invalid invalid invalid invalid invalid
+
+    xc6:
+        invalid invalid invalid invalid invalid
+
+    xc7:
+        invalid invalid invalid invalid invalid
+
+    xc8:
+        invalid invalid invalid invalid invalid
+
+    xc9:
+        invalid invalid invalid invalid invalid
+
+    xca:
+        invalid invalid invalid invalid invalid
+
+    xcb:
+        invalid invalid invalid invalid invalid
+
+    xcc:
+        invalid invalid invalid invalid invalid
+
+    xcd:
+        invalid invalid invalid invalid invalid
+
+    xce:
+        invalid invalid invalid invalid invalid
+
+    xcf:
+        invalid invalid invalid invalid invalid
+
+    xd0:
+        invalid invalid invalid invalid invalid
+
+    xd1:
+        invalid invalid invalid invalid invalid
+
+    xd2:
+        invalid invalid invalid invalid invalid
+
+    xd3:
+        invalid invalid invalid invalid invalid
+
+    xd4:
+        invalid invalid invalid invalid invalid
+
+    xd5:
+        invalid invalid invalid invalid invalid
+
+    xd6:
+        invalid invalid invalid invalid invalid
+
+    xd7:
+        invalid invalid invalid invalid invalid
+
+    xd8:
+        invalid invalid invalid invalid invalid
+
+    xd9:
+        invalid invalid invalid invalid invalid
+
+    xda:
+        invalid invalid invalid invalid invalid
+
+    xdb:
+        invalid invalid invalid invalid invalid
+
+    xdc:
+        invalid invalid invalid invalid invalid
+
+    xdd:
+        invalid invalid invalid invalid invalid
+
+    xde:
+        invalid invalid invalid invalid invalid
+
+    xdf:
+        invalid invalid invalid invalid invalid
+
+    xe0:
+        invalid invalid invalid invalid invalid
+
+    xe1:
+        invalid invalid invalid invalid invalid
+
+    xe2:
+        invalid invalid invalid invalid invalid
+
+    xe3:
+        invalid invalid invalid invalid invalid
+
+    xe4:
+        invalid invalid invalid invalid invalid
+
+    xe5:
+        invalid invalid invalid invalid invalid
+
+    xe6:
+        impl_dupn jump
+        invalid
+
+    xe7:
+        impl_swapn jump
+        invalid
+
+    xe8:
+        impl_exchange jump
+        invalid
+
+    xe9:
+        invalid invalid invalid invalid invalid
+
+    xea:
+        invalid invalid invalid invalid invalid
+
+    xeb:
+        invalid invalid invalid invalid invalid
+
+    xec:
+        invalid invalid invalid invalid invalid
+
+    xed:
+        invalid invalid invalid invalid invalid
+
+    xee:
+        invalid invalid invalid invalid invalid
+
+    xef:
+        invalid invalid invalid invalid invalid
+
+    xf0:
+        impl_create jump
+        invalid
+
+    xf1:
+        impl_call jump
+        invalid
+
+    xf2:
+        impl_callcode jump
+        invalid
+
+    xf3:
+        impl_return jump
+        invalid
+
+    xf4:
+        impl_delegatecall jump
+        invalid
+
+    xf5:
+        impl_create2 jump
+        invalid
+    xf6:
+        invalid invalid invalid invalid invalid
+
+    xf7:
+        invalid invalid invalid invalid invalid
+
+    xf8:
+        invalid invalid invalid invalid invalid
+
+    xf9:
+        invalid invalid invalid invalid invalid
+
+    xfa:
+        impl_staticcall jump
+        invalid
+
+    xfb:
+        invalid invalid invalid invalid invalid
+
+    xfc:
+        invalid invalid invalid invalid invalid
+
+    xfd:
+        impl_revert jump
+        invalid
+    xfe:
+        invalid invalid invalid invalid invalid
+
+    xff:
+        invalid invalid invalid invalid invalid
+        
+        //////////////////////////////////////////////////////
+       ///                                                ///
+      ///              💅GLAMSTERDAM💅                  ///
+     ///                                                ///
+    //////////////////////////////////////////////////////
+    dupn_17:
+        dupn 0x11
+        move jump
+    dupn_18:
+        dupn 0x12
+        move jump
+    dupn_19:
+        dupn 0x13
+        move jump
+    dupn_20:
+        dupn 0x14
+        move jump
+    dupn_21:
+        dupn 0x15
+        move jump
+    dupn_22:
+        dupn 0x16
+        move jump
+    dupn_23:
+        dupn 0x17
+        move jump
+    dupn_24:
+        dupn 0x18
+        move jump
+    dupn_25:
+        dupn 0x19
+        move jump
+    dupn_26:
+        dupn 0x1a
+        move jump
+    dpn_27:
+        dupn 0x1b
+        move jump
+    dupn_28:
+        dupn 0x1c
+        move jump
+    dupn_29:
+        dupn 0x1d
+        move jump
+    dupn_30:
+        dupn 0x1e
+        move jump
+    dupn_31:
+        dupn 0x1f
+        move jump
+    dupn_32:
+        dupn 0x20
+        move jump
+    swapn_17:
+        swapn 0x11
+        move jump
+    swapn_18:
+        swapn 0x12
+        move jump
+    swapn_19:
+        swapn 0x13
+        move jump
+    swapn_20:
+        swapn 0x14
+        move jump
+    swapn_21:
+        swapn 0x15
+        move jump
+    swapn_22:
+        swapn 0x16
+        move jump
+    swapn_23:
+        swapn 0x17
+        move jump
+    swapn_24:
+        swapn 0x18
+        move jump
+    swapn_25:
+        swapn 0x19
+        move jump
+    swapn_26:
+        swapn 0x1a
+        move jump
+    swapn_27:
+        swapn 0x1b
+        move jump
+    swapn_28:
+        swapn 0x1c
+        move jump
+    swapn_29:
+        swapn 0x1d
+        move jump
+    swapn_30:
+        swapn 0x1e
+        move jump
+    swapn_31:
+        swapn 0x1f
+        move jump
+    swapn_32:
+        swapn 0x20
+        move jump
+    // for now this is enough to support 32 slots on the stack
+}
