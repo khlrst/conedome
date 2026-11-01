@@ -12,8 +12,12 @@
 #define constant TABLE_SIZE = 0x06
 /// Glamsterdam table size in bytes.
 #define constant GLAMSTERDAM_TABLE_SIZE = 0x02
+/// Glamsterdam stack depth offset.
+#define constant GLAMSTERDAM_STACK_DEPTH_OFFSET = 0x11
 /// Hex representation of 1 byte.
 #define constant ONE_BYTE = 0x01
+/// Hex representation of 2 bytes.
+#define constant TWO_BYTES = 0x02
 /// Hex representation of one word (32 bytes).
 #define constant ONE_WORD = 0x20
 
@@ -35,6 +39,12 @@
     move:
         [PROGRAM_COUNTER] mload // load program counter
         [ONE_BYTE] add // increment the program counter
+        [PROGRAM_COUNTER] mstore // store the updated program counter
+        loop jump // loop to the next opcode
+
+    move_two:
+        [PROGRAM_COUNTER] mload // load program counter
+        [TWO_BYTES] add // increment the program counter
         [PROGRAM_COUNTER] mstore // store the updated program counter
         loop jump // loop to the next opcode
 
@@ -94,6 +104,7 @@
 
     impl_log4:
         [ONE_WORD] add // increase offset by one memory slot to respect reserved PC memory slot
+        log4
         move jump
 
     impl_create:
@@ -165,10 +176,12 @@
     impl_keccak256:
         [ONE_WORD] add // increase offset by one memory slot to respect reserved PC memory slot
         keccak256
+        move jump
     
     impl_calldatacopy:
         [ONE_WORD] add // increase offset by one memory slot to respect reserved PC memory slot
         calldatacopy
+        move jump
 
     impl_sstore:
         [STORAGE_OFFSET] add // add storage offset to current pointer on the stack
@@ -206,12 +219,14 @@
     
     impl_jumpi:
         impl_jump jumpi
+        pop // pop 2nd item from the stack if condition is false
         move jump
 
 
     impl_swapn:
         [PROGRAM_COUNTER] [ONE_BYTE] add mload // load program counter
         calldataload [SINGLE_OPCODE] shr // load next opcode
+        [GLAMSTERDAM_STACK_DEPTH_OFFSET] sub // subtract glamsterdam stack depth offset to get dupn index
         [GLAMSTERDAM_TABLE_SIZE] mul // multiply by glamsterdam table size to get offset
         swapn_17 add // add to table fisrt opcode offset
         jump
@@ -219,6 +234,7 @@
     impl_dupn:
         [PROGRAM_COUNTER] [ONE_BYTE] add mload // load program counter
         calldataload [SINGLE_OPCODE] shr // load next opcode
+        [GLAMSTERDAM_STACK_DEPTH_OFFSET] sub // subtract glamsterdam stack depth offset to get dupn index
         [GLAMSTERDAM_TABLE_SIZE] mul // multiply by glamsterdam table size to get offset
         dupn_17 add // add to table fisrt opcode offset
         jump
@@ -1062,99 +1078,99 @@
     //////////////////////////////////////////////////////
     dupn_17:
         dupn 0x11
-        move jump
+        move_two jump
     dupn_18:
         dupn 0x12
-        move jump
+        move_two jump
     dupn_19:
         dupn 0x13
-        move jump
+        move_two jump
     dupn_20:
         dupn 0x14
-        move jump
+        move_two jump
     dupn_21:
         dupn 0x15
-        move jump
+        move_two jump
     dupn_22:
         dupn 0x16
-        move jump
+        move_two jump
     dupn_23:
         dupn 0x17
-        move jump
+        move_two jump
     dupn_24:
         dupn 0x18
-        move jump
+        move_two jump
     dupn_25:
         dupn 0x19
-        move jump
+        move_two jump
     dupn_26:
         dupn 0x1a
-        move jump
-    dpn_27:
+        move_two jump
+    dupn_27:
         dupn 0x1b
-        move jump
+        move_two jump
     dupn_28:
         dupn 0x1c
-        move jump
+        move_two jump
     dupn_29:
         dupn 0x1d
-        move jump
+        move_two jump
     dupn_30:
         dupn 0x1e
-        move jump
+        move_two jump
     dupn_31:
         dupn 0x1f
-        move jump
+        move_two jump
     dupn_32:
         dupn 0x20
-        move jump
+        move_two jump
     swapn_17:
         swapn 0x11
-        move jump
+        move_two jump
     swapn_18:
         swapn 0x12
-        move jump
+        move_two jump
     swapn_19:
         swapn 0x13
-        move jump
+        move_two jump
     swapn_20:
         swapn 0x14
-        move jump
+        move_two jump
     swapn_21:
         swapn 0x15
-        move jump
+        move_two jump
     swapn_22:
         swapn 0x16
-        move jump
+        move_two jump
     swapn_23:
         swapn 0x17
-        move jump
+        move_two jump
     swapn_24:
         swapn 0x18
-        move jump
+        move_two jump
     swapn_25:
         swapn 0x19
-        move jump
+        move_two jump
     swapn_26:
         swapn 0x1a
-        move jump
+        move_two jump
     swapn_27:
         swapn 0x1b
-        move jump
+        move_two jump
     swapn_28:
         swapn 0x1c
-        move jump
+        move_two jump
     swapn_29:
         swapn 0x1d
-        move jump
+        move_two jump
     swapn_30:
         swapn 0x1e
-        move jump
+        move_two jump
     swapn_31:
         swapn 0x1f
-        move jump
+        move_two jump
     swapn_32:
         swapn 0x20
-        move jump
+        move_two jump
     // for now this is enough to support 32 slots on the stack
 }
