@@ -11,7 +11,9 @@
 /// Size of the opcode table in bytes.
 #define constant TABLE_SIZE = 0x06
 /// Glamsterdam table size in bytes.
-#define constant GLAMSTERDAM_TABLE_SIZE = 0x02
+#define constant GLAMSTERDAM_TABLE_SIZE = 0x07
+/// Glamsterdam exchange table size in bytes.
+#define constant GLAMSETEDAM_EXCHANGE_TABLE_SIZE = 0x09
 /// Glamsterdam stack depth offset.
 #define constant GLAMSTERDAM_STACK_DEPTH_OFFSET = 0x11
 /// Hex representation of 1 byte.
@@ -53,6 +55,10 @@
       ///             OPCODE IMPLEMENTATIONS             ///
      ///                                                ///
     //////////////////////////////////////////////////////
+
+    impl_pc:
+        [PROGRAM_COUNTER] mload // load program counter
+        move jump
 
     impl_call:
         // increase offsets by one memory slot to respect reserved PC memory slot
@@ -224,7 +230,7 @@
 
 
     impl_swapn:
-        [PROGRAM_COUNTER] [ONE_BYTE] add mload // load program counter
+        [PROGRAM_COUNTER] [ONE_BYTE] add mload // load program counter and increment to the next opcode
         calldataload [SINGLE_OPCODE] shr // load next opcode
         [GLAMSTERDAM_STACK_DEPTH_OFFSET] sub // subtract glamsterdam stack depth offset to get dupn index
         [GLAMSTERDAM_TABLE_SIZE] mul // multiply by glamsterdam table size to get offset
@@ -232,14 +238,20 @@
         jump
     
     impl_dupn:
-        [PROGRAM_COUNTER] [ONE_BYTE] add mload // load program counter
+        [PROGRAM_COUNTER] [ONE_BYTE] add mload // load program counter and increment to the next opcode
         calldataload [SINGLE_OPCODE] shr // load next opcode
         [GLAMSTERDAM_STACK_DEPTH_OFFSET] sub // subtract glamsterdam stack depth offset to get dupn index
         [GLAMSTERDAM_TABLE_SIZE] mul // multiply by glamsterdam table size to get offset
         dupn_17 add // add to table fisrt opcode offset
         jump
 
+    // exchange immediate byte encodes two bytes actually, both bytes are used as stack item indices
     impl_exchange:
+        [PROGRAM_COUNTER] [ONE_BYTE] add mload // load program counter and increment to the next opcode
+        calldataload [SINGLE_OPCODE] shr // load next opcode
+        [GLAMSETEDAM_EXCHANGE_TABLE_SIZE] mul // multiply by table size to get offset
+        exchange_00 add // add to table fisrt opcode offset
+        jump
 
         //////////////////////////////////////////////////////
        ///                                                ///
@@ -415,12 +427,14 @@
 
     x37:
         impl_calldatacopy jump
+        invalid
 
     x38:
         codesize move jump
 
     x39:
         impl_codecopy jump
+        invalid
 
     x3a:
         gasprice move jump
@@ -430,12 +444,14 @@
 
     x3c:
         impl_extcodecopy jump
+        invalid
 
     x3d:
         returndatasize move jump
 
     x3e:
         impl_returndatacopy jump
+        invalid
 
     x3f:
         extcodehash move jump
@@ -493,6 +509,7 @@
 
     x51:
         impl_mload jump
+        invalid
 
     x52:
         impl_mstore jump
@@ -518,7 +535,7 @@
         invalid
 
     x58: // PC
-        [PROGRAM_COUNTER] mload
+        impl_pc jump
         invalid
 
     x59:
@@ -1173,4 +1190,845 @@
         swapn 0x20
         move_two jump
     // for now this is enough to support 32 slots on the stack
+    exchange_00:
+        swap9 swap16 swap9
+        move_two jump
+        invalid
+    exchange_01:
+        swap9 swap15 swap9
+        move_two jump
+        invalid
+    exchange_02:
+        swap9 swap14 swap9
+        move_two jump
+        invalid
+    exchange_03:
+        swap9 swap13 swap9
+        move_two jump
+        invalid
+    exchange_04:
+        swap9 swap12 swap9
+        move_two jump
+        invalid
+    exchange_05:
+        swap9 swap11 swap9
+        move_two jump
+        invalid
+    exchange_06:
+        swap9 swap10 swap9
+        move_two jump
+        invalid
+    exchange_07:
+        swap9 swapn 0x15 swap9
+        move_two jump
+    exchange_08:
+        swap8 swapn 0x15 swap8
+        move_two jump
+    exchange_09:
+        swap7 swapn 0x15 swap7
+        move_two jump
+    exchange_0a:
+        swap6 swapn 0x15 swap6
+        move_two jump
+    exchange_0b:
+        swap5 swapn 0x15 swap5
+        move_two jump
+    exchange_0c:
+        swap4 swapn 0x15 swap4
+        move_two jump
+    exchange_0d:
+        swap3 swapn 0x15 swap3
+        move_two jump
+    exchange_0e:
+        swap2 swapn 0x15 swap2
+        move_two jump
+    exchange_0f:
+        swap1 swapn 0x15 swap1
+        move_two jump
+    exchange_10:
+        swap10 swap16 swap10
+        move_two jump
+        invalid
+    exchange_11:
+        swap10 swap15 swap10
+        move_two jump
+        invalid
+    exchange_12:
+        swap10 swap14 swap10
+        move_two jump
+        invalid
+    exchange_13:
+        swap10 swap13 swap10
+        move_two jump
+        invalid
+    exchange_14:
+        swap10 swap12 swap10
+        move_two jump
+        invalid
+    exchange_15:
+        swap10 swap11 swap10
+        move_two jump
+        invalid
+    exchange_16:
+        swap10 swapn 0x14 swap10
+        move_two jump
+    exchange_17:
+        swap9 swapn 0x14 swap9
+        move_two jump
+    exchange_18:
+        swap8 swapn 0x14 swap8
+        move_two jump
+    exchange_19:
+        swap7 swapn 0x14 swap7
+        move_two jump
+    exchange_1a:
+        swap6 swapn 0x14 swap6
+        move_two jump
+    exchange_1b:
+        swap5 swapn 0x14 swap5
+        move_two jump
+    exchange_1c:
+        swap4 swapn 0x14 swap4
+        move_two jump
+    exchange_1d:
+        swap3 swapn 0x14 swap3
+        move_two jump
+    exchange_1e:
+        swap2 swapn 0x14 swap2
+        move_two jump
+    exchange_1f:
+        swap1 swapn 0x14 swap1
+        move_two jump
+    exchange_20:
+        swap11 swap16 swap11
+        move_two jump
+        invalid
+    exchange_21:
+        swap11 swap15 swap11
+        move_two jump
+        invalid
+    exchange_22:
+        swap11 swap14 swap11
+        move_two jump
+        invalid
+    exchange_23:
+        swap11 swap13 swap11
+        move_two jump
+        invalid
+    exchange_24:
+        swap11 swap12 swap11
+        move_two jump
+        invalid
+    exchange_25:
+        swap11 swapn 0x13 swap11
+        move_two jump
+    exchange_26:
+        swap10 swapn 0x13 swap10
+        move_two jump
+    exchange_27:
+        swap9 swapn 0x13 swap9
+        move_two jump
+    exchange_28:
+        swap8 swapn 0x13 swap8
+        move_two jump
+    exchange_29:
+        swap7 swapn 0x13 swap7
+        move_two jump
+    exchange_2a:
+        swap6 swapn 0x13 swap6
+        move_two jump
+    exchange_2b:
+        swap5 swapn 0x13 swap5
+        move_two jump
+    exchange_2c:
+        swap4 swapn 0x13 swap4
+        move_two jump
+    exchange_2d:
+        swap3 swapn 0x13 swap3
+        move_two jump
+    exchange_2e:
+        swap2 swapn 0x13 swap2
+        move_two jump
+    exchange_2f:
+        swap1 swapn 0x13 swap1
+        move_two jump
+    exchange_30:
+        swap12 swap16 swap12
+        move_two jump
+        invalid
+    exchange_31:
+        swap12 swap15 swap12
+        move_two jump
+        invalid
+    exchange_32:
+        swap12 swap14 swap12
+        move_two jump
+        invalid
+    exchange_33:
+        swap12 swap13 swap12
+        move_two jump
+        invalid
+    exchange_34:
+        swap12 swapn 0x12 swap12
+        move_two jump
+    exchange_35:
+        swap11 swapn 0x12 swap11
+        move_two jump
+    exchange_36:
+        swap10 swapn 0x12 swap10
+        move_two jump
+    exchange_37:
+        swap9 swapn 0x12 swap9
+        move_two jump
+    exchange_38:
+        swap8 swapn 0x12 swap8
+        move_two jump
+    exchange_39:
+        swap7 swapn 0x12 swap7
+        move_two jump
+    exchange_3a:
+        swap6 swapn 0x12 swap6
+        move_two jump
+    exchange_3b:
+        swap5 swapn 0x12 swap5
+        move_two jump
+    exchange_3c:
+        swap4 swapn 0x12 swap4
+        move_two jump
+    exchange_3d:
+        swap3 swapn 0x12 swap3
+        move_two jump
+    exchange_3e:
+        swap2 swapn 0x12 swap2
+        move_two jump
+    exchange_3f:
+        swap1 swapn 0x12 swap1
+        move_two jump
+    exchange_40:
+        swap13 swap16 swap13
+        move_two jump
+        invalid
+    exchange_41:
+        swap13 swap15 swap13
+        move_two jump
+        invalid
+    exchange_42:
+        swap13 swap14 swap13
+        move_two jump
+        invalid
+    exchange_43:
+        swap13 swapn 0x11 swap13
+        move_two jump
+    exchange_44:
+        swap12 swapn 0x11 swap12
+        move_two jump
+    exchange_45:
+        swap11 swapn 0x11 swap11
+        move_two jump
+    exchange_46:
+        swap10 swapn 0x11 swap10
+        move_two jump
+    exchange_47:
+        swap9 swapn 0x11 swap9
+        move_two jump
+    exchange_48:
+        swap8 swapn 0x11 swap8
+        move_two jump
+    exchange_49:
+        swap7 swapn 0x11 swap7
+        move_two jump
+    exchange_4a:
+        swap6 swapn 0x11 swap6
+        move_two jump
+    exchange_4b:
+        swap5 swapn 0x11 swap5
+        move_two jump
+    exchange_4c:
+        swap4 swapn 0x11 swap4
+        move_two jump
+    exchange_4d:
+        swap3 swapn 0x11 swap3
+        move_two jump
+    exchange_4e:
+        swap2 swapn 0x11 swap2
+        move_two jump
+    exchange_4f:
+        swap1 swapn 0x11 swap1
+        move_two jump
+    exchange_50:
+        swap14 swap16 swap14
+        move_two jump
+        invalid
+    exchange_51:
+        swap14 swap15 swap14
+        move_two jump
+        invalid
+    exchange_52:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_53:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_54:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_55:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_56:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_57:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_58:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_59:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_5a:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_5b:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_5c:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_5d:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_5e:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_5f:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_60:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_61:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_62:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_63:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_64:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_65:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_66:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_67:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_68:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_69:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_6a:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_6b:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_6c:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_6d:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_6e:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_6f:
+        invalid invalid invalid invalid invalid invalid invalid invalid    
+    exchange_70:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_71:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_72:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_73:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_74:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_75:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_76:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_77:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_78:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_79:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_7a:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_7b:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_7c:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_7d:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_7e:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_7f:
+        invalid invalid invalid invalid invalid invalid invalid invalid
+    exchange_80:
+        swap1 swap16 swap1
+        move_two jump
+        invalid
+    exchange_81:
+        swap1 swap15 swap1
+        move_two jump
+        invalid
+    exchange_82:
+        swap1 swap14 swap1
+        move_two jump
+        invalid
+    exchange_83:
+        swap1 swap13 swap1
+        move_two jump
+        invalid
+    exchange_84:
+        swap1 swap12 swap1
+        move_two jump
+        invalid
+    exchange_85:
+        swap1 swap11 swap1
+        move_two jump
+        invalid
+    exchange_86:
+        swap1 swap10 swap1
+        move_two jump
+        invalid
+    exchange_87:
+        swap1 swap9 swap1
+        move_two jump
+        invalid
+    exchange_88:
+        swap1 swap8 swap1
+        move_two jump
+        invalid
+    exchange_89:
+        swap1 swap7 swap1
+        move_two jump
+        invalid
+    exchange_8a:
+        swap1 swap6 swap1
+        move_two jump
+        invalid
+    exchange_8b:
+        swap1 swap5 swap1
+        move_two jump
+        invalid
+    exchange_8c:
+        swap1 swap4 swap1
+        move_two jump
+        invalid
+    exchange_8d:
+        swap1 swap3 swap1
+        move_two jump
+        invalid
+    exchange_8e:
+        swap1 swap2 swap1
+        move_two jump
+        invalid
+    exchange_8f:
+        swap1 swapn 0x1d swap1
+        move_two jump
+    exchange_90:
+        swap2 swap16 swap2
+        move_two jump
+        invalid
+    exchange_91:
+        swap2 swap15 swap2
+        move_two jump
+        invalid
+    exchange_92:
+        swap2 swap14 swap2
+        move_two jump
+        invalid
+    exchange_93:
+        swap2 swap13 swap2
+        move_two jump
+        invalid
+    exchange_94:
+        swap2 swap12 swap2
+        move_two jump
+        invalid
+    exchange_95:
+        swap2 swap11 swap2
+        move_two jump
+        invalid
+    exchange_96:
+        swap2 swap10 swap2
+        move_two jump
+        invalid
+    exchange_97:
+        swap2 swap9 swap2
+        move_two jump
+        invalid
+    exchange_98:
+        swap2 swap8 swap2
+        move_two jump
+        invalid
+    exchange_99:
+        swap2 swap7 swap2
+        move_two jump
+        invalid
+    exchange_9a:
+        swap2 swap6 swap2
+        move_two jump
+        invalid
+    exchange_9b:
+        swap2 swap5 swap2
+        move_two jump
+        invalid
+    exchange_9c:
+        swap2 swap4 swap2
+        move_two jump
+        invalid
+    exchange_9d:
+        swap2 swap3 swap2
+        move_two jump
+        invalid
+    exchange_9e:
+        swap2 swapn 0x1c swap2
+        move_two jump
+    exchange_9f:
+        swap1 swapn 0x1c swap1
+        move_two jump
+    exchange_a0:
+        swap3 swap16 swap3
+        move_two jump
+        invalid
+    exchange_a1:
+        swap3 swap15 swap3
+        move_two jump
+        invalid
+    exchange_a2:
+        swap3 swap14 swap3
+        move_two jump
+        invalid
+    exchange_a3:
+        swap3 swap13 swap3
+        move_two jump
+        invalid
+    exchange_a4:
+        swap3 swap12 swap3
+        move_two jump
+        invalid
+    exchange_a5:
+        swap3 swap11 swap3
+        move_two jump
+        invalid
+    exchange_a6:
+        swap3 swap10 swap3
+        move_two jump
+        invalid
+    exchange_a7:
+        swap3 swap9 swap3
+        move_two jump
+        invalid
+    exchange_a8:
+        swap3 swap8 swap3
+        move_two jump
+        invalid
+    exchange_a9:
+        swap3 swap7 swap3
+        move_two jump
+        invalid
+    exchange_aa:
+        swap3 swap6 swap3
+        move_two jump
+        invalid
+    exchange_ab:
+        swap3 swap5 swap3
+        move_two jump
+        invalid
+    exchange_ac:
+        swap3 swap4 swap3
+        move_two jump
+        invalid
+    exchange_ad:
+        swap3 swapn 0x1b swap3
+        move_two jump
+    exchange_ae:
+        swap2 swapn 0x1b swap2
+        move_two jump
+    exchange_af:
+        swap1 swapn 0x1b swap1
+        move_two jump
+    exchange_b0:
+        swap4 swap16 swap4
+        move_two jump
+        invalid
+    exchange_b1:
+        swap4 swap15 swap4
+        move_two jump
+        invalid
+    exchange_b2:
+        swap4 swap14 swap4
+        move_two jump
+        invalid
+    exchange_b3:
+        swap4 swap13 swap4
+        move_two jump
+        invalid
+    exchange_b4:
+        swap4 swap12 swap4
+        move_two jump
+        invalid
+    exchange_b5:
+        swap4 swap11 swap4
+        move_two jump
+        invalid
+    exchange_b6:
+        swap4 swap10 swap4
+        move_two jump
+        invalid
+    exchange_b7:
+        swap4 swap9 swap4
+        move_two jump
+        invalid
+    exchange_b8:
+        swap4 swap8 swap4
+        move_two jump
+        invalid
+    exchange_b9:
+        swap4 swap7 swap4
+        move_two jump
+        invalid
+    exchange_ba:
+        swap4 swap6 swap4
+        move_two jump
+        invalid
+    exchange_bb:
+        swap4 swap5 swap4
+        move_two jump
+        invalid
+    exchange_bc:
+        swap4 swapn 0x1a swap4
+        move_two jump
+    exchange_bd:
+        swap3 swapn 0x1a swap3
+        move_two jump
+    exchange_be:
+        swap2 swapn 0x1a swap2
+        move_two jump
+    exchange_bf:
+        swap1 swapn 0x1a swap1
+        move_two jump
+    exchange_c0:
+        swap5 swap16 swap5
+        move_two jump
+        invalid
+    exchange_c1:
+        swap5 swap15 swap5
+        move_two jump
+        invalid
+    exchange_c2:
+        swap5 swap14 swap5
+        move_two jump
+        invalid
+    exchange_c3:
+        swap5 swap13 swap5
+        move_two jump
+        invalid
+    exchange_c4:
+        swap5 swap12 swap5
+        move_two jump
+        invalid
+    exchange_c5:
+        swap5 swap11 swap5
+        move_two jump
+        invalid
+    exchange_c6:
+        swap5 swap10 swap5
+        move_two jump
+        invalid
+    exchange_c7:
+        swap5 swap9 swap5
+        move_two jump
+        invalid
+    exchange_c8:
+        swap5 swap8 swap5
+        move_two jump
+        invalid
+    exchange_c9:
+        swap5 swap7 swap5
+        move_two jump
+        invalid
+    exchange_ca:
+        swap5 swap6 swap5
+        move_two jump
+        invalid
+    exchange_cb:
+        swap5 swapn 0x19 swap5
+        move_two jump
+    exchange_cc:
+        swap4 swapn 0x19 swap4
+        move_two jump
+    exchange_cd:
+        swap3 swapn 0x19 swap3
+        move_two jump
+    exchange_ce:
+        swap2 swapn 0x19 swap2
+        move_two jump
+    exchange_cf:
+        swap1 swapn 0x19 swap1
+        move_two jump
+    exchange_d0:
+        swap6 swap16 swap6
+        move_two jump
+        invalid
+    exchange_d1:
+        swap6 swap15 swap6
+        move_two jump
+        invalid
+    exchange_d2:
+        swap6 swap14 swap6
+        move_two jump
+        invalid
+    exchange_d3:
+        swap6 swap13 swap6
+        move_two jump
+        invalid
+    exchange_d4:
+        swap6 swap12 swap6
+        move_two jump
+        invalid
+    exchange_d5:
+        swap6 swap11 swap6
+        move_two jump
+        invalid
+    exchange_d6:
+        swap6 swap10 swap6
+        move_two jump
+        invalid
+    exchange_d7:
+        swap6 swap9 swap6
+        move_two jump
+        invalid
+    exchange_d8:
+        swap6 swap8 swap6
+        move_two jump
+        invalid
+    exchange_d9:
+        swap6 swap7 swap6
+        move_two jump
+        invalid
+    exchange_da:
+        swap6 swapn 0x18 swap6
+        move_two jump
+    exchange_db:
+        swap5 swapn 0x18 swap5
+        move_two jump
+    exchange_dc:
+        swap4 swapn 0x18 swap4
+        move_two jump
+    exchange_dd:
+        swap3 swapn 0x18 swap3
+        move_two jump
+    exchange_de:
+        swap2 swapn 0x18 swap2
+        move_two jump
+    exchange_df:
+        swap1 swapn 0x18 swap1
+        move_two jump
+    exchange_e0:
+        swap7 swap16 swap7
+        move_two jump
+        invalid
+    exchange_e1:
+        swap7 swap15 swap7
+        move_two jump
+        invalid
+    exchange_e2:
+        swap7 swap14 swap7
+        move_two jump
+        invalid
+    exchange_e3:
+        swap7 swap13 swap7
+        move_two jump
+        invalid
+    exchange_e4:
+        swap7 swap12 swap7
+        move_two jump
+        invalid
+    exchange_e5:
+        swap7 swap11 swap7
+        move_two jump
+        invalid
+    exchange_e6:
+        swap7 swap10 swap7
+        move_two jump
+        invalid
+    exchange_e7:
+        swap7 swap9 swap7
+        move_two jump
+        invalid
+    exchange_e8:
+        swap7 swap8 swap7
+        move_two jump
+        invalid
+    exchange_e9:
+        swap7 swapn 0x17 swap7
+        move_two jump
+    exchange_ea:
+        swap6 swapn 0x17 swap6
+        move_two jump
+    exchange_eb:
+        swap5 swapn 0x17 swap5
+        move_two jump
+    exchange_ec:
+        swap4 swapn 0x17 swap4
+        move_two jump
+    exchange_ed:
+        swap3 swapn 0x17 swap3
+        move_two jump
+    exchange_ee:
+        swap2 swapn 0x17 swap2
+        move_two jump
+    exchange_ef:
+        swap1 swapn 0x17 swap1
+        move_two jump
+    exchange_f0:
+        swap8 swap16 swap8
+        move_two jump
+        invalid
+    exchange_f1:
+        swap8 swap15 swap8
+        move_two jump
+        invalid
+    exchange_f2:
+        swap8 swap14 swap8
+        move_two jump
+        invalid
+    exchange_f3:
+        swap8 swap13 swap8
+        move_two jump
+        invalid
+    exchange_f4:
+        swap8 swap12 swap8
+        move_two jump
+        invalid
+    exchange_f5:
+        swap8 swap11 swap8
+        move_two jump
+        invalid
+    exchange_f6:
+        swap8 swap10 swap8
+        move_two jump
+        invalid
+    exchange_f7:
+        swap8 swap9 swap8
+        move_two jump
+        invalid
+    exchange_f8:
+        swap8 swapn 0x16 swap8
+        move_two jump
+    exchange_f9:
+        swap7 swapn 0x16 swap7
+        move_two jump
+    exchange_fa:
+        swap6 swapn 0x16 swap6
+        move_two jump
+    exchange_fb:
+        swap5 swapn 0x16 swap5
+        move_two jump
+    exchange_fc:
+        swap4 swapn 0x16 swap4
+        move_two jump
+    exchange_fd:
+        swap3 swapn 0x16 swap3
+        move_two jump
+    exchange_fe:
+        swap2 swapn 0x16 swap2
+        move_two jump
+    exchange_ff:
+        swap1 swapn 0x16 swap1
+        move_two jump
 }
