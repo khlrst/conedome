@@ -13,7 +13,7 @@
 /// Glamsterdam table size in bytes.
 #define constant GLAMSTERDAM_TABLE_SIZE = 0x07
 /// Glamsterdam exchange table size in bytes.
-#define constant GLAMSETEDAM_EXCHANGE_TABLE_SIZE = 0x09
+#define constant GLAMSTERDAM_EXCHANGE_TABLE_SIZE = 0x09
 /// Glamsterdam stack depth offset.
 #define constant GLAMSTERDAM_STACK_DEPTH_OFFSET = 0x11
 /// Hex representation of 1 byte.
@@ -249,7 +249,7 @@
     impl_exchange:
         [PROGRAM_COUNTER] [ONE_BYTE] add mload // load program counter and increment to the next opcode
         calldataload [SINGLE_OPCODE] shr // load next opcode
-        [GLAMSETEDAM_EXCHANGE_TABLE_SIZE] mul // multiply by table size to get offset
+        [GLAMSTERDAM_EXCHANGE_TABLE_SIZE] mul // multiply by table size to get offset
         exchange_00 add // add to table fisrt opcode offset
         jump
 
