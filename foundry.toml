@@ -1,0 +1,21 @@
+[profile.default]
+solc_version = '0.8.38'
+evm_version = 'amsterdam'
+auto_detect_solc = false
+src = "contracts"
+out = "out"
+libs = ["lib"]
+optimizer = true
+optimizer_runs = 1337
+ffi = true
+experimental=true
+
+remappings = [
+  "forge-std=lib/forge-std/src/",
+  "foundry-huff-neo=lib/foundry-huff-neo/src/",
+]
+
+[fuzz]
+runs = 1_000
+
+# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
